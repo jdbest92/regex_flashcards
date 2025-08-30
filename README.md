@@ -3,7 +3,7 @@
 A simple and effective front-end Web application for learning and mastering regular expressions (regex) in Python. It uses a Spaced Repetition System (SRS) to optimize long-term memorization of concepts.
 
 
-*(Replace this image with a real screenshot of your application)*
+![Screenshot](images/screenshot.png)
 
 ## ✨ Features
 
