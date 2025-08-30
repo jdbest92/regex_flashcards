@@ -1,0 +1,1341 @@
+<!DOCTYPE html><html lang="en"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>Python Regex Quiz - Spaced Repetition</title>    <style>        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+    
+    /* For cases where no cards are available */
+    .container.no-cards .flashcard {
+        min-height: 150px; /* Smaller if no content */
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+        font-size: 2em;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 25px;
+        padding: 15px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 10px;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .stat-label {
+        font-size: 0.9em;
+        color: #666;
+        cursor: help; /* Adds a help cursor to indicate tooltip */
+    }
+
+    .card-container {
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    .flashcard {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+        min-height: 250px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .flashcard:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .card-type {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: white;
+        text-transform: capitalize;
+    }
+
+    /* Card type colors */
+    .type-definition { background: #667eea; }
+    .type-application { background: #f093fb; }
+    .type-validation { background: #4facfe; }
+    .type-trap { background: #fa709a; }
+    .type-counter-example { background: #feca57; }
+
+    .question {
+        font-size: 1.3em;
+        color: #333;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .question code, .answer code {
+        background-color: #e9ecef;
+        padding: 0.2em 0.4em;
+        margin: 0;
+        font-size: 85%;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+    }
+
+    .answer {
+        display: none;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .answer.show {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .code-example {
+        background: #f8f9fa;
+        border-left: 3px solid #667eea;
+        padding: 10px 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        overflow-x: auto; /* Allows horizontal scrolling for code */
+    }
+
+    .buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        flex: 1;
+        min-width: 120px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: white;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #fc466b, #3f5efb);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .difficulty-buttons {
+        display: none; /* Hidden by default */
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .difficulty-buttons.show {
+        display: flex; /* Shown via JS */
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 20px 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transition: width 0.5s ease;
+    }
+
+    .import-export {
+        margin-top: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-label {
+        display: inline-block;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-right: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .file-label:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal.show {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .level-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        justify-content: center; /* Center the buttons */
+    }
+
+    .level-btn {
+        flex: 1;
+        min-width: 100px; /* Minimum size to avoid squishing */
+        padding: 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        color: #555;
+    }
+
+    .level-btn.active {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border-color: #667eea;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .level-btn:hover:not(.active) {
+        border-color: #667eea;
+        color: #667eea;
+    }
+</style>
+  </head><body>    <div class="container" id="quizContainer">        <h1>🎯 Mastering Python Regex</h1><div class="level-selector">
+        <button class="level-btn active" data-level="debutant">Beginner</button>
+        <button class="level-btn" data-level="intermediaire">Intermediate</button>
+        <button class="level-btn" data-level="avance">Advanced</button>
+        <button class="level-btn" data-level="tous">All Levels</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="streak">0</div>
+            <div class="stat-label" title="Number of consecutive correct answers.">Streak</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="mastered">0</div>
+            <div class="stat-label" title="Cards considered learned (level 5+ in the spaced repetition system).">Mastered</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="total">0</div>
+            <div class="stat-label" title="Total number of cards in the selected level.">Total</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="accuracy">0%</div>
+            <div class="stat-label" title="Percentage of correct answers across all seen cards.">Accuracy</div>
+        </div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <div class="card-container">
+        <div class="flashcard" id="flashcard">
+            <span class="card-type" id="cardType"></span>
+            <div class="question" id="question">Click "Start" to begin the quiz!</div>
+            <div class="answer" id="answer"></div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button class="btn btn-primary" id="showAnswer">Show Answer</button>
+        <button class="btn btn-secondary" id="startBtn">Start</button>
+    </div>
+
+    <div class="difficulty-buttons" id="difficultyButtons">
+        <button class="btn btn-success" data-difficulty="3">Easy</button>
+        <button class="btn btn-primary" data-difficulty="2">Medium</button>
+        <button class="btn btn-danger" data-difficulty="1">Hard</button>
+        <button class="btn btn-secondary" data-difficulty="0">Review Again</button>
+    </div>
+
+    <div class="import-export">
+        <h3>📊 Backup & Restore</h3>
+        <input type="file" id="importFile" class="file-input" accept=".json">
+        <label for="importFile" class="file-label">📥 Import</label>
+        <button class="btn btn-primary" id="exportBtn">📤 Export</button>
+        <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+    </div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h2>🎉 Congratulations!</h2>
+        <p id="modalMessage">You have completed all the cards for this level!</p>
+        <button class="btn btn-primary" id="closeModalBtn">Continue</button>
+    </div>
+</div>
+
+<script>
+    // Flashcard database with multiple variations
+    const flashcardsDB = {
+        debutant: [
+            // Quantifier + (4 cards)
+            {
+                id: 'plus_def',
+                concept: 'quantifier_plus',
+                type: 'definition',
+                question: "What does the <code>+</code> quantifier mean in regex?",
+                answer: "It indicates one or more repetitions of the preceding pattern.<br><div class='code-example'>re.findall(r'a+', 'baaaac') &rarr; ['aaaa']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'plus_app',
+                concept: 'quantifier_plus',
+                type: 'application',
+                question: "What does <code>[a-z]+</code> match in 'abc123def'?",
+                answer: "It matches 'abc' and 'def': one or more consecutive lowercase letters.<br><div class='code-example'>re.findall(r'[a-z]+', 'abc123def') &rarr; ['abc', 'def']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'plus_valid',
+                concept: 'quantifier_plus',
+                type: 'validation',
+                question: "True or False: <code>[0-9]+</code> matches '1234'?",
+                answer: "✅ True. <code>[0-9]+</code> looks for one or more consecutive digits, so '1234' matches completely.<br><div class='code-example'>re.match(r'[0-9]+', '1234') &rarr; Match object</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'plus_piege',
+                concept: 'quantifier_plus',
+                type: 'trap',
+                question: "What is the difference between <code>+</code> and <code>*</code> in regex?",
+                answer: "<code>+</code> = one or more occurrences (minimum 1)<br><code>*</code> = zero or more occurrences (can match nothing)<br><div class='code-example'>r'a+' does not match '' but r'a*' does.</div>",
+                level: 'debutant'
+            },
+
+            // Quantifier * (4 cards)
+            {
+                id: 'star_def',
+                concept: 'quantifier_star',
+                type: 'definition',
+                question: "What does the <code>*</code> quantifier mean in regex?",
+                answer: "It indicates zero or more repetitions of the preceding pattern.<br><div class='code-example'>re.findall(r'ab*', 'a ab abb') &rarr; ['a', 'ab', 'abb']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'star_app',
+                concept: 'quantifier_star',
+                type: 'application',
+                question: "For what kind of words is the regex <code>colou*r</code> useful? Give examples of matches.",
+                answer: "It is useful for matching alternative spellings, like British and American English variants. It matches 'color' (0 'u'), 'colour' (1 'u'), 'colouur' (2 'u'), etc.<br><div class='code-example'>re.findall(r'colou*r', 'color colour') &rarr; ['color', 'colour']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'star_contre',
+                concept: 'quantifier_star',
+                type: 'counter-example',
+                question: "Which of these will NOT be matched by <code>a*b</code>: 'b', 'ab', 'aab', 'c'?",
+                answer: "'c' will not be matched because it contains neither 'b' nor the a*b sequence.<br><div class='code-example'>re.match(r'a*b', 'c') &rarr; None</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'star_valid',
+                concept: 'quantifier_star',
+                type: 'validation',
+                question: "True or False: the regex <code>x*</code> will find a match in the string 'yyyy'?",
+                answer: "✅ True. It will find a zero-length match at the beginning of the string, because <code>*</code> means 'zero or more'.<br><div class='code-example'>re.search(r'x*', 'yyyy') &rarr; Match object (match='')</div>",
+                level: 'debutant'
+            },
+
+            // Quantifier ? (3 cards)
+            {
+                id: 'question_def',
+                concept: 'quantifier_question',
+                type: 'definition',
+                question: "What does the <code>?</code> quantifier mean in regex?",
+                answer: "It indicates zero or one occurrence of the preceding pattern (making it optional).<br><div class='code-example'>re.findall(r'colou?r', 'color colour') &rarr; ['color', 'colour']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'question_app',
+                concept: 'quantifier_question',
+                type: 'application',
+                question: "What does <code>https?</code> match in a URL?",
+                answer: "It matches 'http' or 'https' (the 's' is optional).<br><div class='code-example'>re.findall(r'https?', 'http://site.com https://secure.com') &rarr; ['http', 'https']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'question_valid',
+                concept: 'quantifier_question',
+                type: 'validation',
+                question: "True or False: <code>ab?c</code> matches 'ac'?",
+                answer: "✅ True. The 'b' is optional, so 'ac' (0 'b's) is matched.<br><div class='code-example'>re.match(r'ab?c', 'ac') &rarr; Match object</div>",
+                level: 'debutant'
+            },
+
+            // Dot . (3 cards)
+            {
+                id: 'dot_def',
+                concept: 'metacharacter_dot',
+                type: 'definition',
+                question: "What does the dot (<code>.</code>) represent in regex?",
+                answer: "It matches any character except a newline (<code>\\n</code>).<br><div class='code-example'>re.findall(r'a.c', 'abc a2c a@c') &rarr; ['abc', 'a2c', 'a@c']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'dot_app',
+                concept: 'metacharacter_dot',
+                type: 'application',
+                question: "What does <code>.at</code> match in 'cat bat 9at'?",
+                answer: "It matches 'cat', 'bat', and '9at': any character followed by 'at'.<br><div class='code-example'>re.findall(r'.at', 'cat bat 9at') &rarr; ['cat', 'bat', '9at']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'dot_piege',
+                concept: 'metacharacter_dot',
+                type: 'trap',
+                question: "How do you match a literal dot (the '.' character)?",
+                answer: "You must escape it with a backslash: <code>\\.</code><br><div class='code-example'>re.findall(r'\\.', 'end. ok') &rarr; ['.']</div>",
+                level: 'debutant'
+            },
+
+            // Character classes [] (4 cards)
+            {
+                id: 'class_def',
+                concept: 'character_class',
+                type: 'definition',
+                question: "What do the square brackets <code>[]</code> mean in regex?",
+                answer: "They define a character class: matches ONE character from the list.<br><div class='code-example'>re.findall(r'[aeiou]', 'hello') &rarr; ['e', 'o']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'class_app',
+                concept: 'character_class',
+                type: 'application',
+                question: "What does <code>[0-9]</code> match in 'abc123'?",
+                answer: "It matches '1', '2', and '3': each digit individually.<br><div class='code-example'>re.findall(r'[0-9]', 'abc123') &rarr; ['1', '2', '3']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'class_valid',
+                concept: 'character_class',
+                type: 'validation',
+                question: "True or False: <code>[a-z]</code> matches 'A'?",
+                answer: "❌ False. <code>[a-z]</code> only matches lowercase letters. For 'A', you need <code>[A-Z]</code> or <code>[a-zA-Z]</code>.<br><div class='code-example'>re.match(r'[a-z]', 'A') &rarr; None</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'class_contre',
+                concept: 'character_class',
+                type: 'counter-example',
+                question: "What does <code>[^0-9]</code> NOT match?",
+                answer: "Digits! <code>[^...]</code> is a negated class that matches anything EXCEPT what is listed.<br><div class='code-example'>re.findall(r'[^0-9]', 'a1b2') &rarr; ['a', 'b']</div>",
+                level: 'debutant'
+            },
+
+            // Anchors ^ and $ (3 cards)
+            {
+                id: 'anchor_start_def',
+                concept: 'start_anchor',
+                type: 'definition',
+                question: "What does <code>^</code> mean at the start of a regex?",
+                answer: "It anchors the search to the start of the string (or line with the MULTILINE flag).<br><div class='code-example'>re.match(r'^Hello', 'Hello World') &rarr; Match<br>re.search(r'^World', 'Hello World') &rarr; None</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'anchor_end_def',
+                concept: 'end_anchor',
+                type: 'definition',
+                question: "What does <code>$</code> mean at the end of a regex?",
+                answer: "It anchors the search to the end of the string (or line with the MULTILINE flag).<br><div class='code-example'>re.search(r'world$', 'hello world') &rarr; Match<br>re.search(r'hello$', 'hello world') &rarr; None</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'anchor_app',
+                concept: 'anchors',
+                type: 'application',
+                question: "What does <code>^[0-9]+$</code> match?",
+                answer: "A string composed ONLY of digits (from start to finish).<br><div class='code-example'>re.match(r'^[0-9]+$', '12345') &rarr; Match<br>re.match(r'^[0-9]+$', '123abc') &rarr; None</div>",
+                level: 'debutant'
+            },
+
+            // Escaping (2 cards)
+            {
+                id: 'escape_def',
+                concept: 'escaping',
+                type: 'definition',
+                question: "What is the purpose of the backslash <code>\\</code> in regex?",
+                answer: "It escapes a metacharacter to restore its literal meaning, or it introduces a special sequence (like <code>\\d</code> for a digit).<br><div class='code-example'>re.findall(r'\\.', 'end.') &rarr; ['.']<br>re.findall(r'\\d', '123') &rarr; ['1', '2', '3']</div>",
+                level: 'debutant'
+            },
+            {
+                id: 'escape_piege',
+                concept: 'escaping',
+                type: 'trap',
+                question: "How do you match the literal '$' character?",
+                answer: "You must escape it: <code>\\$</code><br><div class='code-example'>re.findall(r'\\$[0-9]+', '$100') &rarr; ['$100']</div>",
+                level: 'debutant'
+            }
+        ],
+        
+        intermediaire: [
+            // Capture Groups (3 cards)
+            {
+                id: 'group_def',
+                concept: 'capture_groups',
+                type: 'definition',
+                question: "What are parentheses <code>()</code> used for in regex?",
+                answer: "They create capture groups to extract specific parts of the match.<br><div class='code-example'>match = re.search(r'(\\d+)-(\\w+)', '123-abc')<br>match.group(1) &rarr; '123'<br>match.group(2) &rarr; 'abc'</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'group_app',
+                concept: 'capture_groups',
+                type: 'application',
+                question: "What does <code>(\\w+)@(\\w+\\.\\w+)</code> capture in 'user@domain.com'?",
+                answer: "Group 1: 'user' (the identifier)<br>Group 2: 'domain.com' (the domain)<br><div class='code-example'>match = re.search(r'(\\w+)@(\\w+\\.\\w+)', 'user@domain.com')<br>match.groups() &rarr; ('user', 'domain.com')</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'group_valid',
+                concept: 'capture_groups',
+                type: 'validation',
+                question: "True or False: Groups are numbered starting from 0?",
+                answer: "❌ False. <code>group(0)</code> returns the entire match. Capture groups start at <code>group(1)</code>.<br><div class='code-example'>match = re.search(r'(a)(b)', 'ab')<br>match.group(0) &rarr; 'ab'<br>match.group(1) &rarr; 'a'</div>",
+                level: 'intermediaire'
+            },
+
+            // Non-capturing Groups (2 cards)
+            {
+                id: 'noncap_def',
+                concept: 'non_capturing_groups',
+                type: 'definition',
+                question: "What does <code>(?:...)</code> mean in regex?",
+                answer: "It's a non-capturing group. It allows grouping elements (for a quantifier, for example) without creating a capture.<br><div class='code-example'>re.findall(r'(?:Mr|Ms) (\\w+)', 'Mr Smith Ms Jones') &rarr; ['Smith', 'Jones']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'noncap_app',
+                concept: 'non_capturing_groups',
+                type: 'application',
+                question: "What's the difference between <code>(ab)+</code> and <code>(?:ab)+</code>?",
+                answer: "Both match 'ab', 'abab', etc. But <code>(ab)+</code> captures the last 'ab' in group 1, while <code>(?:ab)+</code> captures nothing.<br><div class='code-example'>re.search(r'(ab)+', 'abab').group(1) &rarr; 'ab'<br>re.search(r'(?:ab)+', 'abab').groups() &rarr; ()</div>",
+                level: 'intermediaire'
+            },
+
+            // Lazy Quantifiers (3 cards)
+            {
+                id: 'lazy_def',
+                concept: 'lazy_quantifiers',
+                type: 'definition',
+                question: "What does the <code>?</code> after a quantifier (<code>*?</code>, <code>+?</code>, <code>??</code>) do?",
+                answer: "It makes the quantifier 'lazy' (non-greedy): it matches the minimum number of characters possible.<br><div class='code-example'>re.findall(r'<.*>', '<a><b>') &rarr; ['<a><b>'] (greedy)<br>re.findall(r'<.*?>', '<a><b>') &rarr; ['<a>', '<b>'] (lazy)</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'lazy_app',
+                concept: 'lazy_quantifiers',
+                type: 'application',
+                question: "What does <code>\\\".*?\\\"</code> match in '\"hello\" and \"world\"'?",
+                answer: "It matches '\"hello\"' then '\"world\"' separately. The lazy version <code>*?</code> stops at the first closing quote it finds.<br><div class='code-example'>re.findall(r'\\\".*?\\\"', '\"hello\" and \"world\"') &rarr; ['\"hello\"', '\"world\"']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'lazy_piege',
+                concept: 'lazy_quantifiers',
+                type: 'trap',
+                question: "To extract content from a <code><div>...</div></code> tag, why is <code><div>(.*)</div></code> risky?",
+                answer: "Because <code>.*</code> is greedy. On '<code><div>a</div><div>b</div></code>', it would match '<code>a</div><div>b</code>' as the content. You should use the lazy version: <code><div>(.*?)</div></code>.<br><div class='code-example'>re.search(r'<div>(.*)</div>', '<div>a</div><div>b</div>').group(1) &rarr; 'a</div><div>b'</div>",
+                level: 'intermediaire'
+            },
+
+            // Lookarounds (4 cards)
+            {
+                id: 'lookahead_pos_def',
+                concept: 'lookaround',
+                type: 'definition',
+                question: "What does <code>(?=...)</code> (positive lookahead) mean?",
+                answer: "It's a condition: it matches if the pattern <code>...</code> follows, but without including it in the final match.<br><div class='code-example'>re.findall(r'\\b\\w+(?=\\s*euros)', '100 euros and 200 dollars') &rarr; ['100']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'lookbehind_pos_def',
+                concept: 'lookaround',
+                type: 'definition',
+                question: "What does <code>(?<=...)</code> (positive lookbehind) mean?",
+                answer: "It's a condition: it matches if the pattern <code>...</code> precedes, but without including it in the final match.<br><div class='code-example'>re.findall(r'(?<=\\$)\\d+', 'price $50 and 20€') &rarr; ['50']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'lookahead_neg_def',
+                concept: 'lookaround',
+                type: 'definition',
+                question: "What does <code>(?!...)</code> (negative lookahead) mean?",
+                answer: "Matches if the pattern <code>...</code> does NOT follow. It's an exclusion condition.<br><div class='code-example'>re.findall(r'\\d+(?!\\s*%)', '100% 50 25') &rarr; ['50', '25']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'lookbehind_neg_def',
+                concept: 'lookaround',
+                type: 'definition',
+                question: "What does <code>(?<!...)</code> (negative lookbehind) mean?",
+                answer: "Matches if the pattern <code>...</code> does NOT precede. It's an exclusion condition.<br><div class='code-example'>re.findall(r'(?<!M.)\\s\\w+', 'Mr Smith and Dr Jones') &rarr; [' Jones']</div>",
+                level: 'intermediaire'
+            },
+            
+            // Specific Quantifiers {} (3 cards)
+            {
+                id: 'curly_def',
+                concept: 'specific_quantifiers',
+                type: 'definition',
+                question: "What do the quantifiers <code>{n}</code>, <code>{n,}</code>, and <code>{n,m}</code> mean?",
+                answer: "<code>{n}</code>: exactly n repetitions.<br><code>{n,}</code>: at least n repetitions.<br><code>{n,m}</code>: between n and m repetitions (inclusive).<br><div class='code-example'>re.findall(r'\\d{2,4}', '1 12 123 12345') &rarr; ['12', '123', '1234']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'curly_app',
+                concept: 'specific_quantifiers',
+                type: 'application',
+                question: "How do you match a US ZIP code (5 digits)?",
+                answer: "With <code>\\b\\d{5}\\b</code>. The <code>{5}</code> ensures there are exactly 5 digits, and <code>\\b</code> ensures it's a whole word.<br><div class='code-example'>re.search(r'\\b\\d{5}\\b', '...in New York 10001...') &rarr; Match object</div>",
+                level: 'intermediaire'
+            },
+             {
+                id: 'curly_valid',
+                concept: 'specific_quantifiers',
+                type: 'validation',
+                question: "True or False: <code>a{2,3}</code> will match 'aaaa'?",
+                answer: "❌ False. It will match the first 3 'a's ('aaa'), but not the entire string because it exceeds the maximum limit of 3.<br><div class='code-example'>re.fullmatch(r'a{2,3}', 'aaaa') &rarr; None</div>",
+                level: 'intermediaire'
+            },
+            
+            // Alternation | (3 cards)
+            {
+                id: 'alt_def',
+                concept: 'alternation',
+                type: 'definition',
+                question: "What does the pipe operator <code>|</code> do in regex?",
+                answer: "It acts as a logical 'OR', allowing a match of either the expression on its left or the one on its right.<br><div class='code-example'>re.findall(r'dog|cat', 'a dog and a cat') &rarr; ['dog', 'cat']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'alt_piege',
+                concept: 'alternation',
+                type: 'trap',
+                question: "What is the difference between <code>^cat|dog$</code> and <code>^(cat|dog)$</code>?",
+                answer: "<code>^cat|dog$</code> matches 'cat' at the beginning OR 'dog' at the end.<br><code>^(cat|dog)$</code> matches a string that is EXACTLY 'cat' or 'dog'.<br><div class='code-example'>re.search(r'^cat|dog$', 'the dog') &rarr; Match ('dog')</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'alt_app',
+                concept: 'alternation',
+                type: 'application',
+                question: "How would you match file extensions '.jpg', '.jpeg', or '.png'?",
+                answer: "By using an alternation within a group: <code>\\.(jpg|jpeg|png)$</code>.<br><div class='code-example'>re.search(r'\\.(jpg|jpeg|png)$', 'image.jpeg') &rarr; Match object</div>",
+                level: 'intermediaire'
+            },
+
+            // Backreferences (2 cards)
+            {
+                id: 'backref_def',
+                concept: 'backreference',
+                type: 'definition',
+                question: "What is a backreference like <code>\\1</code> used for?",
+                answer: "It refers to the text captured by a previous group. <code>\\1</code> refers to group 1, <code>\\2</code> to group 2, etc.<br><div class='code-example'>re.search(r'(\\w+)-\\1', 'test-test') &rarr; Match object</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'backref_app',
+                concept: 'backreference',
+                type: 'application',
+                question: "How do you find consecutively repeated words (e.g., 'the the')?",
+                answer: "With the regex <code>\\b(\\w+)\\s+\\1\\b</code>. It captures a word (<code>\\w+</code>) and checks if it's immediately followed by itself (<code>\\1</code>).<br><div class='code-example'>re.search(r'\\b(\\w+)\\s+\\1\\b', 'is this the the bug?') &rarr; Match object</div>",
+                level: 'intermediaire'
+            },
+            
+            // Word Boundary (2 cards)
+            {
+                id: 'boundary_def',
+                concept: 'word_boundary',
+                type: 'definition',
+                question: "What does the special sequence <code>\\b</code> mean?",
+                answer: "It's a 'word boundary'. It matches a zero-width position between a word character (<code>\\w</code>) and a non-word character (<code>\\W</code>), or at the start/end of a string.<br><div class='code-example'>re.findall(r'\\bcat\\b', 'the cat concatenate') &rarr; ['cat']</div>",
+                level: 'intermediaire'
+            },
+            {
+                id: 'boundary_app',
+                concept: 'word_boundary',
+                type: 'application',
+                question: "Why is <code>\\b</code> crucial for searching for the word 'is'?",
+                answer: "Without <code>\\b</code>, the regex <code>is</code> would also match inside 'this' or 'island'. <code>\\bis\\b</code> ensures we only match the whole word 'is'.<br><div class='code-example'>re.findall(r'\\bis\\b', 'this is my island') &rarr; ['is']</div>",
+                level: 'intermediaire'
+            }
+        ],
+        
+        avance: [
+            // Named Groups (3 cards)
+            {
+                id: 'named_group_def',
+                concept: 'named_groups',
+                type: 'definition',
+                question: "How do you create a named capture group and how do you access it?",
+                answer: "Use the syntax <code>(?P<name>...)</code>. You can access it via <code>match.group('name')</code>.<br><div class='code-example'>match = re.search(r'(?P<year>\\d{4})-(?P<month>\\d{2})', '2023-11')<br>match.group('year') &rarr; '2023'</div>",
+                level: 'avance'
+            },
+            {
+                id: 'named_group_backref',
+                concept: 'named_groups',
+                type: 'application',
+                question: "How do you use a backreference with a named group?",
+                answer: "Use the syntax <code>(?P=name)</code>.<br><div class='code-example'>re.search(r'\\b(?P<word>\\w+)\\s+(?P=word)\\b', 'hello hello') &rarr; Match</div>",
+                level: 'avance'
+            },
+            {
+                id: 'named_group_piege',
+                concept: 'named_groups',
+                type: 'trap',
+                question: "Can a named group also be accessed by its number?",
+                answer: "✅ Yes. Named groups retain their numerical index just like unnamed groups.<br><div class='code-example'>match = re.search(r'(?P<word>\\w+)', 'test')<br>match.group('word') == match.group(1) &rarr; True</div>",
+                level: 'avance'
+            },
+
+            // Flags (5 cards)
+            {
+                id: 'flag_ignorecase_def',
+                concept: 'flags',
+                type: 'definition',
+                question: "What is the <code>re.IGNORECASE</code> (or <code>re.I</code>) flag used for?",
+                answer: "It makes the regex case-insensitive.<br><div class='code-example'>re.findall(r'test', 'Test, test, TEST', re.IGNORECASE) &rarr; ['Test', 'test', 'TEST']</div>",
+                level: 'avance'
+            },
+            {
+                id: 'flag_multiline_def',
+                concept: 'flags',
+                type: 'definition',
+                question: "What does the <code>re.MULTILINE</code> (or <code>re.M</code>) flag change?",
+                answer: "It modifies the behavior of <code>^</code> and <code>$</code>. Instead of only matching at the start/end of the string, they match at the start/end of each line.<br><div class='code-example'>re.findall(r'^\\w+', 'line1\\nline2', re.M) &rarr; ['line1', 'line2']</div>",
+                level: 'avance'
+            },
+            {
+                id: 'flag_dotall_def',
+                concept: 'flags',
+                type: 'definition',
+                question: "What does the <code>re.DOTALL</code> (or <code>re.S</code>) flag change?",
+                answer: "It allows the <code>.</code> metacharacter to match absolutely everything, including newlines (<code>\\n</code>), which it doesn't by default.<br><div class='code-example'>re.search(r'start.*end', 'start\\nend', re.S) &rarr; Match</div>",
+                level: 'avance'
+            },
+            {
+                id: 'flag_verbose_def',
+                concept: 'flags',
+                type: 'application',
+                question: "What is the <code>re.VERBOSE</code> (or <code>re.X</code>) flag used for?",
+                answer: "It allows writing more readable regexes by ignoring whitespace (unless escaped) and allowing comments (starting with <code>#</code>).<br><div class='code-example'>regex = r'''(?P<h>\\d{2}) # Hour<br>: # Separator<br>(?P<m>\\d{2}) # Minute'''<br>re.match(regex, '14:30', re.X)</div>",
+                level: 'avance'
+            },
+            {
+                id: 'flag_inline_app',
+                concept: 'flags',
+                type: 'application',
+                question: "How can you activate a flag (e.g., case-insensitivity) for only part of the regex?",
+                answer: "Use an inline flag: <code>(?i)</code> to activate, <code>(?-i)</code> to deactivate, and <code>(?i:...)</code> to apply it to a group.<br><div class='code-example'>re.findall(r'(?i)test', 'TEST test') &rarr; ['TEST', 'test']<br>re.findall(r'A(?i)b(?-i)C', 'aBc') &rarr; None</div>",
+                level: 'avance'
+            },
+            
+            // Conditionals (2 cards)
+            {
+                id: 'conditional_def',
+                concept: 'conditionals',
+                type: 'definition',
+                question: "What does a conditional expression like <code>(?(id)yes|no)</code> do?",
+                answer: "It matches the 'yes' pattern IF the group with the identifier 'id' (number or name) has already matched something. Otherwise, it tries to match the 'no' pattern (which is optional).<br><div class='code-example'>re.search(r'(\")?b(?(1)\")', '\"b\"') &rarr; Match<br>re.search(r'(\")?b(?(1)\")', 'b') &rarr; Match</div>",
+                level: 'avance'
+            },
+            {
+                id: 'conditional_app',
+                concept: 'conditionals',
+                type: 'application',
+                question: "How can you match a date in either 'DD/MM/YYYY' or 'YYYY-MM-DD' format?",
+                answer: "You could use a conditional to ensure consistent separators, but it's complex. Often, two separate regexes are more readable.<br><div class='code-example'>date_regex = r'(?:(\\d{4})-(\\d{2})-(\\d{2}))|(?:(\\d{2})/(\\d{2})/(\\d{4}))' # Simpler than a conditional</div>",
+                level: 'avance'
+            },
+
+            // Traps and advanced concepts (6 cards)
+            {
+                id: 'lookbehind_limit_piege',
+                concept: 'lookbehind_limitation',
+                type: 'trap',
+                question: "What is the main limitation of lookbehinds (<code>(?<=...)</code>, <code>(?<!...)</code>) in Python?",
+                answer: "The pattern inside a lookbehind must have a fixed length. <code>(?<=\\d+)</code> is invalid, but <code>(?<=\\d{3})</code> is valid.<br><div class='code-example'># re.compile('(?<=\\w+):') &rarr; Error<br>re.compile('(?<=word):') &rarr; OK</div>",
+                level: 'avance'
+            },
+            {
+                id: 'backtracking_def',
+                concept: 'backtracking',
+                type: 'definition',
+                question: "What is 'catastrophic backtracking'?",
+                answer: "It's a performance issue where the regex engine takes exponential time to find a match (or determine there isn't one), often caused by nested and ambiguous quantifiers.<br><div class='code-example'># Warning, can hang the program!<br>re.match(r'(a+)+b', 'aaaaaaaaaaaaaaaaaaaaaaac')</div>",
+                level: 'avance'
+            },
+            {
+                id: 'atomic_group_piege',
+                concept: 'atomic_groups',
+                type: 'trap',
+                question: "What is an atomic group <code>(?>...)</code> and is it supported in Python?",
+                answer: "An atomic group does not allow backtracking once it has matched. It 'locks in' its match. Python's built-in <code>re</code> module does not support it, but the third-party <code>regex</code> module does.<br><div class='code-example'># Using the 'regex' module:<br>regex.match(r'(?>a+)b', 'aaab') &rarr; None</div>",
+                level: 'avance'
+            },
+            {
+                id: 'greedy_nuance_piege',
+                concept: 'greediness',
+                type: 'trap',
+                question: "In <code>'abc:123:xyz'</code>, why doesn't <code>(.*):</code> capture 'abc'?",
+                answer: "Because <code>.*</code> is greedy. It will consume the entire string ('abc:123:xyz'), then backtrack just enough to satisfy the rest of the regex (<code>:</code>). It will therefore stop at the last <code>:</code>, capturing 'abc:123'.<br><div class='code-example'>re.match(r'(.*):', 'abc:123:xyz').group(1) &rarr; 'abc:123'</div>",
+                level: 'avance'
+            },
+            {
+                id: 'password_validation_app',
+                concept: 'lookaround',
+                type: 'application',
+                question: "How can you validate a password (min 8 chars, 1 uppercase, 1 lowercase, 1 digit)?",
+                answer: "With positive lookaheads that check conditions without consuming characters.<br><div class='code-example'>regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$'<br>re.match(regex, 'Abc12345') &rarr; Match</div>",
+                level: 'avance'
+            },
+            {
+                id: 'unicode_property_piege',
+                concept: 'unicode',
+                type: 'trap',
+                question: "How can you match a Unicode character category like 'all letters' (including accented ones)?",
+                answer: "The standard <code>re</code> module doesn't support Unicode properties like <code>\\p{L}</code>. You must use the third-party <code>regex</code> module and the <code>regex.UNICODE</code> flag.<br><div class='code-example'># Using the 'regex' module<br>regex.findall(r'\\p{L}+', 'éàc-abc') &rarr; ['éàc', 'abc']</div>",
+                level: 'avance'
+            },
+            
+            // Functions from the 're' module (6 cards)
+            {
+                id: 're_sub_def',
+                concept: 're_functions',
+                type: 'definition',
+                question: "How does <code>re.sub()</code> work, and how can you use groups in the replacement?",
+                answer: "<code>re.sub(pattern, repl, string)</code> replaces matches of <code>pattern</code> with <code>repl</code>. You can use <code>\\1</code>, <code>\\g<1></code>, or <code>\\g<name></code> in <code>repl</code> to reinsert the content of the groups.<br><div class='code-example'>re.sub(r'(\\d{4})-(\\d{2})', r'\\2/\\1', '2023-11') &rarr; '11/2023'</div>",
+                level: 'avance'
+            },
+            {
+                id: 're_sub_func_app',
+                concept: 're_functions',
+                type: 'application',
+                question: "Can you use a function for the replacement string in <code>re.sub()</code>?",
+                answer: "Yes. If the <code>repl</code> argument is a function, it will be called for each match, with the match object as an argument. Its return value will be the replacement string.<br><div class='code-example'>def double(m): return str(int(m.group(0)) * 2)<br>re.sub(r'\\d+', double, 'a 10 b 20') &rarr; 'a 20 b 40'</div>",
+                level: 'avance'
+            },
+             {
+                id: 're_split_def',
+                concept: 're_functions',
+                type: 'definition',
+                question: "What is the main difference between <code>str.split()</code> and <code>re.split()</code>?",
+                answer: "<code>re.split()</code> can split a string using a separator defined by a regex, which is much more powerful. Also, if the pattern contains capture groups, the captured texts are also included in the result list.<br><div class='code-example'>re.split(r'[,;]', 'a,b;c') &rarr; ['a', 'b', 'c']<br>re.split(r'([,;])', 'a,b;c') &rarr; ['a', ',', 'b', ';', 'c']</div>",
+                level: 'avance'
+            },
+            {
+                id: 're_finditer_def',
+                concept: 're_functions',
+                type: 'definition',
+                question: "What is <code>re.finditer()</code> used for and when should you use it instead of <code>re.findall()</code>?",
+                answer: "<code>re.finditer()</code> returns an iterator of match objects instead of a list of strings. It's more memory-efficient if the number of matches is very large, as it doesn't store all the results at once.<br><div class='code-example'>for m in re.finditer(r'\\w+', 'one two three'): print(m.span())</div>",
+                level: 'avance'
+            },
+             {
+                id: 're_compile_def',
+                concept: 're_functions',
+                type: 'definition',
+                question: "What is the benefit of using <code>re.compile()</code>?",
+                answer: "Compiling a regex with <code>re.compile()</code> creates a regex object. This is more efficient if you use the same regex multiple times in your code, as it is parsed only once.<br><div class='code-example'>p = re.compile(r'\\d+')<br>p.findall('1a2b3c') # faster than re.findall if in a loop</div>",
+                level: 'avance'
+            },
+            {
+                id: 're_fullmatch_def',
+                concept: 're_functions',
+                type: 'definition',
+                question: "What is the difference between <code>re.match()</code> and <code>re.fullmatch()</code>?",
+                answer: "<code>re.match()</code> checks for a match only at the beginning of the string. <code>re.fullmatch()</code> checks if the entire string matches the regex, from start to finish. It's a shortcut for <code>re.match(r'pattern$', ...)</code>.<br><div class='code-example'>re.match(r'\\w+', 'abc def') &rarr; Match ('abc')<br>re.fullmatch(r'\\w+', 'abc def') &rarr; None</div>",
+                level: 'avance'
+            }
+        ]
+    };
+
+    // *** START OF JS LOGIC ***
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- DOM References ---
+        const dom = {
+            quizContainer: document.getElementById('quizContainer'),
+            levelSelector: document.querySelector('.level-selector'),
+            streakEl: document.getElementById('streak'),
+            masteredEl: document.getElementById('mastered'),
+            totalEl: document.getElementById('total'),
+            accuracyEl: document.getElementById('accuracy'),
+            progressFill: document.getElementById('progress'),
+            flashcard: document.getElementById('flashcard'),
+            cardTypeEl: document.getElementById('cardType'),
+            questionEl: document.getElementById('question'),
+            answerEl: document.getElementById('answer'),
+            showAnswerBtn: document.getElementById('showAnswer'),
+            startBtn: document.getElementById('startBtn'),
+            difficultyButtonsContainer: document.getElementById('difficultyButtons'),
+            importBtn: document.getElementById('importFile'),
+            exportBtn: document.getElementById('exportBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            modal: document.getElementById('modal'),
+            modalMessage: document.getElementById('modalMessage'),
+            closeModalBtn: document.getElementById('closeModalBtn')
+        };
+
+        // --- SRS (Spaced Repetition System) Constants ---
+        const SRS_LEVELS = {
+            0: 0, // Review again (in the session)
+            1: 1 * 60 * 60 * 1000, // 1 hour
+            2: 8 * 60 * 60 * 1000, // 8 hours
+            3: 24 * 60 * 60 * 1000, // 1 day
+            4: 3 * 24 * 60 * 60 * 1000, // 3 days
+            5: 7 * 24 * 60 * 60 * 1000, // 1 week (Considered mastered)
+            6: 14 * 24 * 60 * 60 * 1000, // 2 weeks
+            7: 30 * 24 * 60 * 60 * 1000, // 1 month
+            8: 60 * 24 * 60 * 60 * 1000, // 2 months
+        };
+        const MASTERED_LEVEL = 5;
+
+        // --- Application State ---
+        let state = {
+            cardStates: {}, // { id: { level: 0, due: timestamp } }
+            stats: {
+                streak: 0,
+                totalCorrect: 0,
+                totalAnswered: 0,
+            },
+            currentCard: null,
+            currentDeck: [], // All cards from the current filter
+            studyQueue: [], // Cards to study (new + due)
+            currentFilter: 'debutant',
+            isStarted: false
+        };
+
+        // --- Main Functions ---
+
+        /** Initialize the application */
+        function init() {
+            loadState();
+            bindListeners();
+            setFilter(state.currentFilter || 'debutant'); // Ensure filter is applied on load
+            dom.startBtn.style.display = 'block';
+            dom.showAnswerBtn.style.display = 'none';
+            updateStatsDOM();
+        }
+        
+        /** Start the quiz */
+        function startQuiz() {
+            state.isStarted = true;
+            dom.startBtn.style.display = 'none';
+            buildStudyQueue();
+            selectNextCard();
+        }
+
+        /** Build the filtered deck */
+        function buildFilteredDeck() {
+            state.currentDeck = [];
+            if (state.currentFilter === 'tous') {
+                state.currentDeck = [
+                    ...flashcardsDB.debutant,
+                    ...flashcardsDB.intermediaire,
+                    ...flashcardsDB.avance
+                ];
+            } else {
+                state.currentDeck = flashcardsDB[state.currentFilter] || [];
+            }
+        }
+
+        /** Build the study queue (due cards + new cards) */
+        function buildStudyQueue() {
+            buildFilteredDeck();
+            const now = Date.now();
+            state.studyQueue = state.currentDeck.filter(card => {
+                const cardState = state.cardStates[card.id];
+                return !cardState || cardState.due <= now; // New card or due card
+            });
+            // Prioritize "Review Again" cards (level 0 but not new)
+            state.studyQueue.sort((a, b) => {
+                const stateA = state.cardStates[a.id];
+                const stateB = state.cardStates[b.id];
+                const levelA = stateA ? stateA.level : -1; // -1 for new
+                const levelB = stateB ? stateB.level : -1;
+                
+                if (levelA === 0 && levelB !== 0) return -1;
+                if (levelB === 0 && levelA !== 0) return 1;
+                return (stateA ? stateA.due : 0) - (stateB ? stateB.due : 0); // Oldest due first
+            });
+        }
+
+        /** Select and display the next card */
+        function selectNextCard() {
+            if (state.studyQueue.length === 0) {
+                showCompletionModal();
+                return;
+            }
+
+            state.currentCard = state.studyQueue.shift(); // Take the first card from the queue
+            displayCard(state.currentCard);
+        }
+
+        /** Display a card in the DOM */
+        function displayCard(card) {
+            dom.quizContainer.classList.remove('no-cards');
+            dom.cardTypeEl.textContent = card.type.replace('-', ' ');
+            dom.cardTypeEl.className = `card-type type-${card.type.replace('_', '-')}`;
+            dom.questionEl.innerHTML = card.question;
+            dom.answerEl.innerHTML = card.answer;
+            dom.answerEl.classList.remove('show');
+            dom.difficultyButtonsContainer.classList.remove('show');
+            dom.showAnswerBtn.style.display = 'block';
+        }
+        
+        /** Show the answer */
+        function showAnswer() {
+            if (!state.currentCard) return;
+            dom.answerEl.classList.add('show');
+            dom.difficultyButtonsContainer.classList.add('show');
+            dom.showAnswerBtn.style.display = 'none';
+        }
+
+        /** Display completion state */
+        function showCompletionModal() {
+            state.currentCard = null;
+            dom.quizContainer.classList.add('no-cards');
+            dom.questionEl.innerHTML = "🎉 All cards for this level are done for today!";
+            dom.answerEl.innerHTML = "";
+            dom.cardTypeEl.textContent = "";
+            dom.showAnswerBtn.style.display = 'none';
+            dom.difficultyButtonsContainer.classList.remove('show');
+            
+            // Show the modal
+            dom.modalMessage.textContent = `You have completed all the cards for the "${state.currentFilter}" level. Come back later or switch levels.`;
+            dom.modal.classList.add('show');
+        }
+
+        function closeModal() {
+            dom.modal.classList.remove('show');
+        }
+
+        /** Handle user response (difficulty buttons) */
+        function handleDifficulty(difficulty) {
+            const diff = parseInt(difficulty, 10); // 0: review, 1: hard, 2: medium, 3: easy
+            const cardState = state.cardStates[state.currentCard.id] || { level: 0, due: 0 };
+
+            // Update stats
+            state.stats.totalAnswered++;
+            if (diff > 0) {
+                state.stats.totalCorrect++;
+                state.stats.streak++;
+            } else {
+                state.stats.streak = 0;
+                // Put the card back in the current queue if "Review Again"
+                state.studyQueue.push(state.currentCard);
+            }
+
+            // SRS logic
+            let newLevel = cardState.level;
+            if (diff === 0) {
+                newLevel = 0; // Reset
+            } else if (diff === 1) {
+                newLevel = Math.max(0, newLevel - 1); // Hard
+            } else if (diff === 2) {
+                newLevel++; // Medium
+            } else if (diff === 3) {
+                newLevel += 2; // Easy
+            }
+            
+            newLevel = Math.min(newLevel, Object.keys(SRS_LEVELS).length - 1);
+            
+            let nextDueDate;
+            if (newLevel === 0) {
+                // If "Review Again", set due date for 10 minutes from now to see it again in this session
+                nextDueDate = Date.now() + 10 * 60 * 1000;
+            } else {
+                nextDueDate = Date.now() + SRS_LEVELS[newLevel];
+            }
+
+            state.cardStates[state.currentCard.id] = { level: newLevel, due: nextDueDate };
+            
+            saveState();
+            updateStatsDOM();
+            selectNextCard();
+        }
+
+        /** Change the level filter */
+        function setFilter(level) {
+            state.currentFilter = level;
+            
+            // Update filter button UI
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                if (btn.dataset.level === level) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // If quiz has started, rebuild queue and display
+            if (state.isStarted) {
+                buildStudyQueue();
+                selectNextCard();
+            } else {
+                // Otherwise, just update the total for the start message
+                buildFilteredDeck();
+            }
+            updateStatsDOM(); // Update stats (total, mastered) for the new filter
+        }
+
+        /** Update stats in the DOM */
+        function updateStatsDOM() {
+            const masteredCount = state.currentDeck.filter(card => {
+                const cardState = state.cardStates[card.id];
+                return cardState && cardState.level >= MASTERED_LEVEL;
+            }).length;
+            
+            const totalCardsInDeck = state.currentDeck.length;
+            const accuracy = state.stats.totalAnswered === 0 ? 0 : (state.stats.totalCorrect / state.stats.totalAnswered) * 100;
+
+            dom.streakEl.textContent = state.stats.streak;
+            dom.masteredEl.textContent = masteredCount;
+            dom.totalEl.textContent = totalCardsInDeck;
+            dom.accuracyEl.textContent = `${accuracy.toFixed(0)}%`;
+            
+            const progressPercent = totalCardsInDeck === 0 ? 0 : (masteredCount / totalCardsInDeck) * 100;
+            dom.progressFill.style.width = `${progressPercent}%`;
+        }
+
+        // --- Persistence (localStorage and Files) ---
+
+        function saveState() {
+            const appState = {
+                cardStates: state.cardStates,
+                stats: state.stats,
+                currentFilter: state.currentFilter
+            };
+            localStorage.setItem('regexQuizState', JSON.stringify(appState));
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('regexQuizState');
+            if (savedState) {
+                const loaded = JSON.parse(savedState);
+                state.cardStates = loaded.cardStates || {};
+                state.stats = loaded.stats || { streak: 0, totalCorrect: 0, totalAnswered: 0 };
+                state.currentFilter = loaded.currentFilter || 'debutant';
+            }
+        }
+
+        function exportState() {
+            const dataStr = JSON.stringify({ cardStates: state.cardStates, stats: state.stats }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'regex_quiz_backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importState(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.cardStates && importedData.stats) {
+                        state.cardStates = importedData.cardStates;
+                        state.stats = importedData.stats;
+                        saveState();
+                        alert('Progress imported successfully!');
+                        // Reload state
+                        setFilter(state.currentFilter);
+                        updateStatsDOM();
+                        if(state.isStarted) {
+                            buildStudyQueue();
+                            selectNextCard();
+                        }
+                    } else {
+                        alert('Invalid JSON file.');
+                    }
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            // Clear input to allow re-importing the same file
+            event.target.value = null;
+        }
+
+        function resetApp() {
+            if (confirm('Are you sure you want to reset all your progress? This action is irreversible.')) {
+                localStorage.removeItem('regexQuizState');
+                // Reset internal state
+                state.cardStates = {};
+                state.stats = { streak: 0, totalCorrect: 0, totalAnswered: 0 };
+                state.isStarted = false;
+                
+                // Reset UI
+                setFilter('debutant');
+                dom.questionEl.innerHTML = 'Click "Start" to begin the quiz!';
+                dom.answerEl.innerHTML = '';
+                dom.cardTypeEl.textContent = '';
+                dom.startBtn.style.display = 'block';
+                dom.showAnswerBtn.style.display = 'none';
+                dom.difficultyButtonsContainer.classList.remove('show');
+            }
+        }
+        
+        /** Event Listeners */
+        function bindListeners() {
+            dom.startBtn.addEventListener('click', startQuiz);
+            dom.showAnswerBtn.addEventListener('click', showAnswer);
+            dom.closeModalBtn.addEventListener('click', closeModal);
+
+            dom.levelSelector.addEventListener('click', (e) => {
+                if (e.target.classList.contains('level-btn')) {
+                    setFilter(e.target.dataset.level);
+                }
+            });
+
+            dom.difficultyButtonsContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn')) {
+                    handleDifficulty(e.target.dataset.difficulty);
+                }
+            });
+            
+            dom.flashcard.addEventListener('click', (e) => {
+                // Don't trigger if clicking on a difficulty button
+                if (!dom.difficultyButtonsContainer.contains(e.target) && state.isStarted && state.currentCard) {
+                    if (!dom.answerEl.classList.contains('show')) {
+                        showAnswer();
+                    }
+                }
+            });
+            
+            // Import / Export
+            dom.exportBtn.addEventListener('click', exportState);
+            dom.importBtn.addEventListener('change', importState);
+            dom.resetBtn.addEventListener('click', resetApp);
+        }
+
+        // --- Liftoff ---
+        init();
+
+    });
+    // *** END OF JS LOGIC ***
+</script>
+  </body></html>
